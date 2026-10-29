@@ -1,97 +1,92 @@
-# AWS VPC Network Design — Subnet Allocation & CIDR Plan
+# AWS VPC Network Design — Global E-Commerce Architecture
 
 ## 1. Project Overview
-This document defines a proposed IPv4 addressing and subnet allocation plan for a fictional AWS-hosted application.
+This document defines an enterprise-grade IPv4 addressing and subnet allocation plan for a scalable, global E-Commerce platform. 
 
-The design uses one Amazon Virtual Private Cloud (VPC) in the Asia Pacific (Singapore) Region, with public web subnets and private application and database subnets across two Availability Zones.
+The architecture is engineered to support a high-traffic retail storefront, an isolated order-processing application layer, and a highly secure payment/inventory database backend. The infrastructure is distributed across two Availability Zones to eliminate single points of failure.
 
-* **Design status:** Planned architecture only. No live AWS resources have been deployed or tested.
+* **Design Status:** Planned architecture framework. No live AWS resources have been deployed or provisioned.
 
 ## 2. AWS Region and Availability Zones
-* **AWS Region:** Asia Pacific (Singapore)
-* **Region code:** `ap-southeast-1`
-* **Availability Zone A:** `ap-southeast-1a`
-* **Availability Zone B:** `ap-southeast-1b`
+* **AWS Region:** Europe (Ireland)
+* **Region Code:** `eu-west-1`
+* **Availability Zone A:** `eu-west-1a`
+* **Availability Zone B:** `eu-west-1b`
 
 > [!NOTE]
-> Availability Zone letter mappings can differ between AWS accounts. These labels represent the intended design; verify the actual AZ mapping in an AWS account before deployment.
+> Physical Availability Zone mappings vary dynamically across individual AWS accounts. These labels designate the logical architectural design; map and verify actual AZ identifiers within the target AWS organization prior to deployment.
 
 ## 3. VPC Configuration
-* **VPC name:** `company-production-vpc`
-* **IPv4 CIDR block:** `10.20.0.0/16`
-* **Total IPv4 addresses in the VPC CIDR:** 65,536
-* **Purpose:** Provide a logically isolated network for the proposed application. The VPC uses the private IPv4 range `10.20.0.0/16`.
+* **VPC Name:** `ecommerce-production-vpc`
+* **IPv4 CIDR Block:** `10.50.0.0/16`
+* **Total IPv4 Addresses:** 65,536
+* **Purpose:** Establish a logically isolated network perimeter for production e-commerce operations using the private RFC 1918 address space allocation.
 
 ## 4. Subnet Allocation Plan
 
-### Availability Zone A — `ap-southeast-1a`
+### Availability Zone A — `eu-west-1a`
 
 | Subnet Name | CIDR Block | Intended Purpose |
 | :--- | :--- | :--- |
-| Public Web-A | `10.20.1.0/24` | Public-facing web tier |
-| Private App-A | `10.20.11.0/24` | Internal application tier |
-| Private DB-A | `10.20.21.0/24` | Private database tier |
+| Public-Storefront-A | `10.50.1.0/24` | Public-facing web servers and Public Load Balancers |
+| Private-OrderApp-A | `10.50.11.0/24` | Internal e-commerce business logic & processing |
+| Private-SecureDB-A | `10.50.21.0/24` | Customer accounts, inventory, and payment database records |
 
-### Availability Zone B — `ap-southeast-1b`
+### Availability Zone B — `eu-west-1b`
 
 | Subnet Name | CIDR Block | Intended Purpose |
 | :--- | :--- | :--- |
-| Public Web-B | `10.20.2.0/24` | Public-facing web tier |
-| Private App-B | `10.20.12.0/24` | Internal application tier |
-| Private DB-B | `10.20.22.0/24` | Private database tier |
+| Public-Storefront-B | `10.50.2.0/24` | Mirror public storefront tier for high availability |
+| Private-OrderApp-B | `10.50.12.0/24` | Mirror internal business logic tier for high availability |
+| Private-SecureDB-B | `10.50.22.0/24` | Mirror database tier with active-passive replication |
 
 ## 5. CIDR and Addressing Explanation
-* The VPC uses `10.20.0.0/16`, which provides a larger address range from which smaller subnet ranges are allocated.
-* Each subnet uses a `/24` CIDR block.
-* A `/24` contains 256 IPv4 addresses in total. AWS reserves five addresses in each IPv4 subnet, leaving 251 addresses for other uses within the subnet.
-* The six proposed subnet ranges do not overlap and fit within the overall VPC CIDR block.
+* The primary VPC network boundary uses a `/16` network prefix, creating a massive address pool from which isolated subnets are provisioned.
+* Each architectural tier is allocated a `/24` CIDR block.
+* A standard `/24` segment provides 256 total IPv4 addresses. Because AWS reserves five addresses per subnet for internal control planes, each subnet yields exactly 251 usable host addresses.
+* All six allocated subnet ranges are mathematically isolated, preventing routing overlap while maintaining contiguous unassigned spaces inside the `10.50.0.0/16` block for future service expansions.
 
 ## 6. AWS-Reserved IPv4 Addresses
-For a subnet such as `10.20.1.0/24`, AWS reserves the following five IPv4 addresses:
+For any given subnet tier—using `Public-Storefront-A` (`10.50.1.0/24`) as the baseline model—AWS reserves five structural IP addresses that cannot be assigned to compute resources:
 
-| Address | AWS Reservation |
+| IP Address | AWS Infrastructure Reservation Role |
 | :--- | :--- |
-| `10.20.1.0` | Network address |
-| `10.20.1.1` | Reserved by AWS for the VPC router |
-| `10.20.1.2` | Reserved by AWS for DNS |
-| `10.20.1.3` | Reserved by AWS for future use |
-| `10.20.1.255` | Last address in the subnet, reserved by AWS |
+| `10.50.1.0` | **Network Address:** Defines the foundational boundary of the subnet room. |
+| `10.50.1.1` | **VPC Router:** The default gateway managing internal and external room data routing. |
+| `10.50.1.2` | **AWS DNS Server:** Provides Amazon Provided DNS resolution capabilities for hosts. |
+| `10.50.1.3` | **Future Use Space:** Permanently reserved by AWS for upcoming core utility functions. |
+| `10.50.1.255` | **Network Broadcast Simulation:** Reserved by AWS; traditional IPv4 broadcast is disabled. |
 
 > [!IMPORTANT]
-> The same reservation pattern applies to the other `/24` subnets, using their respective address ranges. AWS reserves the first four IPv4 addresses and the last IPv4 address in each subnet. The final address is reserved by AWS; do not assume that AWS VPC subnets use traditional IPv4 broadcast behavior.
+> This precise address reservation matrix applies across all six active `/24` subnets within their respective mathematical blocks. 
 
-## 7. Public and Private Subnet Strategy
+## 7. Public and Private Subnet Isolation Strategy
 
-### Public Web Subnets
-The two public web subnets are intended to host resources that need to receive authorized internet-facing traffic. Their route table is planned to include:
-* The local VPC route.
-* A default IPv4 route (`0.0.0.0/0`) to an Internet Gateway.
+### Public Storefront Subnets
+* Designed to host internet-facing Application Load Balancers (ALBs) and caching layers.
+* **Routing Path:** Associated with a custom route table pointing a default route (`0.0.0.0/0`) out through an active AWS Internet Gateway (IGW).
+* **Ingress Access:** Authorized public HTTP/HTTPS traffic is accepted.
 
-*Internet reachability also depends on resource addressing, security rules, and other applicable network controls.*
+### Private Order-Application Subnets
+* Houses core containerized shopping cart components, order APIs, and microservices.
+* **Routing Path:** Locked away from direct external ingress paths. 
+* **Ingress Access:** Accepts network traffic exclusively originating from the Public Storefront tier.
 
-### Private Application Subnets
-* The application subnets are intended for internal application components.
-* They should accept only the required application traffic from authorized sources, such as the web tier.
-* The initial design does not include a default route to an Internet Gateway.
+### Private Secure-Database Subnets
+* Holds critical transactional systems, relational database clusters, and persistent state stores.
+* **Routing Path:** Completely air-gapped network segment. No internet routes permitted.
+* **Ingress Access:** Access is locked down down to the absolute minimum, accepting ingress traffic strictly from the Private Order-Application tier over designated database ports (e.g., PostgreSQL `5432` or MySQL `3306`).
 
-### Private Database Subnets
-* The database subnets are intended to contain database resources that are not directly accessible from the public internet.
-* The proposed security design allows database traffic only from the authorized application tier.
-* The initial route plan does not include a default route to an Internet Gateway.
+## 8. Architectural Validation Checklist
+- [x] Primary VPC master CIDR set to `10.50.0.0/16`.
+- [x] Six independent `/24` network subnets explicitly calculated.
+- [x] All subnets reside structurally inside the master VPC range boundaries.
+- [x] Subnet IP boundaries checked: 100% free of network overlap conflicts.
+- [x] Even distribution across two geographic Availability Zones (`eu-west-1a` / `eu-west-1b`).
+- [x] Zero live infrastructure has been deployed; documentation denotes a planned architectural framework.
 
-## 8. Design Validation Checklist
-- [x] VPC CIDR is `10.20.0.0/16`.
-- [x] Six `/24` subnets are documented.
-- [x] All subnet CIDR blocks fall within the VPC range.
-- [x] No subnet CIDR ranges overlap.
-- [x] Each subnet is assigned to the intended Availability Zone.
-- [x] Public and private subnet purposes are explained.
-- [x] AWS-reserved IPv4 addresses are documented correctly.
-- [x] The design is clearly labelled as not deployed or tested.
-
-## 9. Future Improvements
-* Define route tables and subnet associations.
-* Define security group rules and network ACL requirements.
-* Draw the network architecture diagram.
-* Evaluate private outbound access requirements.
-* Review availability, security, and cost before deployment.
+## 9. Next Steps and Iterative Enhancements
+* Design network ACL (NACL) state boundaries to block malicious traffic at the subnet line.
+* Map secure outbound patching paths for the private tiers using a high-availability NAT Gateway configuration.
+* Model the internal Security Groups to enforce the principle of least privilege between infrastructure components.
+* Generate an Infrastructure as Code (IaC) template using Terraform to build out this plan automatically.
