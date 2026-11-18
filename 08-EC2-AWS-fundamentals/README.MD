@@ -87,4 +87,8 @@ This exercise focused on AWS EC2 concepts and console exploration. No EC2 instan
 ## 10. Key Takeaways
 
 EC2 provides the computing resources required to run applications in AWS. Its configuration depends on the operating system image, instance type, storage, networking, and security controls.
+![Instance Type](./03-instance-type.png)
+![Key Pair](./04-key-pair.png)
+![Network Settings](./05-network-settings.png)
+![Storage Settings](./06-storage-settings.png)
 
