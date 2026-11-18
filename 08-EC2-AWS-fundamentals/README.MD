@@ -87,8 +87,46 @@ This exercise focused on AWS EC2 concepts and console exploration. No EC2 instan
 ## 10. Key Takeaways
 
 EC2 provides the computing resources required to run applications in AWS. Its configuration depends on the operating system image, instance type, storage, networking, and security controls.
-![Instance Type](./03-instance-type.png)
-![Key Pair](./04-key-pair.png)
-![Network Settings](./05-network-settings.png)
-![Storage Settings](./06-storage-settings.png)
 
+
+## EC2 Instance Launch Walkthrough
+
+### 1. EC2 Dashboard
+Navigate to the EC2 Dashboard in the AWS Management Console (`us-east-1` / N. Virginia) and click **Launch instance**.
+
+![EC2 Dashboard](./01-ec2-dashboard.png)
+
+---
+
+### 2. Amazon Machine Image (AMI)
+Select **Amazon Linux 2023 kernel-6.18 AMI** (64-bit x86, Free tier eligible) as the operating system template.
+
+![Amazon Machine Image](./02-ami.png)
+
+---
+
+### 3. Instance Type
+Choose **t3.micro** (2 vCPU, 1 GiB Memory, Free tier eligible) to define the virtual hardware capacity.
+
+![Instance Type](./03-instance-type.png)
+
+---
+
+### 4. Key Pair (Login)
+Select an existing key pair or click **Create new key pair** to enable secure SSH authentication to the instance.
+
+![Key Pair](./04-key-pair.png)
+
+---
+
+### 5. Network Settings
+Configure the default VPC, enable **Auto-assign public IP**, and create a security group (`launch-wizard-1`) allowing SSH traffic.
+
+![Network Settings](./05-network-settings.png)
+
+---
+
+### 6. Configure Storage
+Keep the default **8 GiB gp3** root volume (3000 IOPS) with no additional file systems attached.
+
+![Storage Settings](./06-storage-settings.png)
