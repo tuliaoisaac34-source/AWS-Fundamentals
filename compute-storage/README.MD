@@ -77,3 +77,15 @@ Reviewed the EC2 AMI catalog to examine how images are structured and compared b
 - AMIs can come from **Public**, **AWS Marketplace**, or **Custom** sources.
 - **EBS-backed AMIs** link launch configurations and block device mappings to **EBS snapshots** for volume creation.
 - **Custom AMIs** enable consistent, repeatable server provisioning across environments.
+
+### AMI Selection
+
+![AMI Selection](images/02-ami-selection.png)
+
+### Ubuntu AMI Details and Architecture
+
+![Ubuntu AMI Details and Architecture](images/02-ubuntu-ami-details-and-architecture.png)
+
+### AMI and Instance Type Review
+
+![AMI and Instance Type Review](images/02-ami-review.png)
