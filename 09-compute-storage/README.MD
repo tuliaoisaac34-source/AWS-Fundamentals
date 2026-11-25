@@ -106,3 +106,57 @@ Reviewed the EC2 **Launch an instance** AMI catalog to inspect image metadata, a
 - AMIs are sourced from **Public**, **AWS Marketplace**, or **Custom** catalogs.
 - **EBS-backed AMIs** pair launch configurations and block device mappings with **EBS snapshots** to provision instance storage.
 - **Custom AMIs** enable consistent, repeatable server deployments across environments.
+
+## 12. Amazon Elastic Block Store (EBS)
+
+### Objective
+
+Understand how Amazon EBS provides persistent block storage for EC2 instances.
+
+### What is EBS?
+
+Amazon Elastic Block Store (EBS) is a block storage service designed for use with EC2 instances.
+
+It provides persistent storage for operating systems, applications, and files.
+
+### EC2 vs. EBS
+
+- EC2: Virtual computing instance.
+- EBS: Persistent storage volume attached to an EC2 instance.
+
+### EBS Volume Types
+
+| Volume Type | Purpose |
+|---|---|
+| gp3 | General-purpose SSD storage |
+| io2 | High-performance SSD storage with provisioned IOPS |
+| st1 | Throughput-optimized HDD storage |
+
+### Proposed Nginx Storage Configuration
+
+| Setting | Proposed Value |
+|---|---|
+| Operating System | Ubuntu Server |
+| Storage Type | EBS gp3 |
+| Volume Size | 20 GiB |
+| Encryption | Enabled |
+| Backup | EBS snapshots |
+
+### EBS Snapshots
+
+An EBS snapshot is a point-in-time backup of an EBS volume. Snapshots can be used to restore volumes and support recovery from accidental changes or data loss.
+
+### EBS Security
+
+EBS encryption helps protect stored data and snapshots. AWS KMS can be used for encryption key management.
+
+### Key Takeaways
+
+- EBS provides persistent block storage for EC2.
+- EC2 is the virtual server; EBS is its storage device.
+- gp3 is a suitable general-purpose option for a small Nginx website.
+- EBS volumes are Availability Zone-specific.
+- Snapshots support backup and recovery.
+- EBS encryption helps protect data.
+
+**Deployment status:** Proposed configuration only. No billable EBS volume or EC2 instance was created.
