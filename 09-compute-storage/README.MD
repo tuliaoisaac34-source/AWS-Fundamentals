@@ -160,3 +160,77 @@ EBS encryption helps protect stored data and snapshots. AWS KMS can be used for 
 - EBS encryption helps protect data.
 
 **Deployment status:** Proposed configuration only. No billable EBS volume or EC2 instance was created.
+
+## 13. Amazon Simple Storage Service (S3)
+
+### Objective
+
+Understand how Amazon S3 provides object storage independently of EC2 instances.
+
+### What is S3?
+
+Amazon Simple Storage Service (S3) is an object storage service used to store and retrieve files and other data.
+
+### Buckets and Objects
+
+- Bucket: Container for storing objects.
+- Object: File and its associated metadata.
+
+### EBS vs. S3
+
+| EBS | S3 |
+|---|---|
+| Block storage | Object storage |
+| Used as storage volumes for EC2 | Used for files, backups, and objects |
+| AZ-specific volumes | Regional object storage service |
+| Supports block-level operations | Accessed through APIs and supported integrations |
+
+### S3 Storage Classes
+
+| Storage Class | Typical Purpose |
+|---|---|
+| S3 Standard | Frequently accessed data |
+| S3 Intelligent-Tiering | Changing or unpredictable access patterns |
+| S3 Standard-IA | Infrequently accessed data |
+| S3 One Zone-IA | Infrequently accessed data in one AZ |
+| S3 Glacier Instant Retrieval | Archival data requiring fast retrieval |
+| S3 Glacier Flexible Retrieval | Archival data with flexible retrieval |
+| S3 Glacier Deep Archive | Long-term archival |
+
+### Proposed Private Backup Bucket
+
+| Setting | Proposed Value |
+|---|---|
+| Purpose | Nginx website backups |
+| Region | ap-southeast-1 |
+| Storage Class | S3 Standard |
+| Access | Private |
+| Block Public Access | Enabled |
+| Encryption | SSE-S3 |
+| Versioning | Enabled |
+
+### S3 Security
+
+- IAM policies control permissions assigned to identities.
+- Bucket policies define resource-based access permissions.
+- Block Public Access helps prevent unintended public exposure.
+- Encryption protects stored objects.
+- Versioning retains multiple versions of objects.
+
+### Proposed Architecture
+
+An Ubuntu EC2 instance runs Nginx. EBS provides persistent block storage for the server, while a private S3 bucket stores website backup files.
+
+The EC2 instance can use an IAM role with limited permissions to upload backup objects to the designated bucket.
+
+### Key Takeaways
+
+- S3 is object storage.
+- A bucket is a container for objects.
+- EBS and S3 serve different storage purposes.
+- S3 storage classes support different access patterns.
+- Private backup buckets should have Block Public Access enabled.
+- IAM and bucket policies control access.
+- Encryption and versioning provide additional protection.
+
+**Deployment status:** Proposed configuration only. No S3 bucket or billable resources were created.
