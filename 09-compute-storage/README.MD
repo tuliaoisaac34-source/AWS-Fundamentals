@@ -107,130 +107,178 @@ Reviewed the EC2 **Launch an instance** AMI catalog to inspect image metadata, a
 - **EBS-backed AMIs** pair launch configurations and block device mappings with **EBS snapshots** to provision instance storage.
 - **Custom AMIs** enable consistent, repeatable server deployments across environments.
 
+---
+
 ## 12. Amazon Elastic Block Store (EBS)
 
 ### Objective
 
-Understand how Amazon EBS provides persistent block storage for EC2 instances.
+Understand how Amazon EBS provides persistent, low-latency block storage volumes for EC2 instances.
 
-### What is EBS?
+---
 
-Amazon Elastic Block Store (EBS) is a block storage service designed for use with EC2 instances.
+### What Is EBS?
 
-It provides persistent storage for operating systems, applications, and files.
+**Amazon Elastic Block Store (EBS)** is a high-performance block storage service designed for use with Amazon EC2. Unlike instance store volumes (which are ephemeral), EBS volumes persist independently of the instance lifecycle and store operating systems, applications, databases, and file systems.
+
+---
 
 ### EC2 vs. EBS
 
-- EC2: Virtual computing instance.
-- EBS: Persistent storage volume attached to an EC2 instance.
+| Component | Role | Persistence & Scope |
+| :--- | :--- | :--- |
+| **EC2 Instance** | Virtual compute server executing OS and application workloads | Compute state is tied to the running/stopped instance |
+| **EBS Volume** | Network-attached block storage device mounted to an EC2 instance | Persists independently of instance stop/termination; bound to a single Availability Zone (AZ) |
+
+---
 
 ### EBS Volume Types
 
-| Volume Type | Purpose |
-|---|---|
-| gp3 | General-purpose SSD storage |
-| io2 | High-performance SSD storage with provisioned IOPS |
-| st1 | Throughput-optimized HDD storage |
+| Volume Type | Category | Typical Use Case |
+| :--- | :--- | :--- |
+| **`gp3`** | General Purpose SSD | Boot volumes, web servers, development environments, and balanced transactional workloads |
+| **`io2`** | Provisioned IOPS SSD | Mission-critical, latency-sensitive databases requiring sustained high IOPS and durability |
+| **`st1`** | Throughput Optimized HDD | Big data, data warehouses, and sequential log processing (cannot be used as a boot volume) |
+
+---
 
 ### Proposed Nginx Storage Configuration
 
 | Setting | Proposed Value |
-|---|---|
-| Operating System | Ubuntu Server |
-| Storage Type | EBS gp3 |
-| Volume Size | 20 GiB |
-| Encryption | Enabled |
-| Backup | EBS snapshots |
+| :--- | :--- |
+| **Operating System** | Ubuntu Server |
+| **Storage Type** | EBS `gp3` (General Purpose SSD) |
+| **Volume Size** | `20 GiB` |
+| **Encryption** | Enabled (AWS KMS) |
+| **Backup Strategy** | Automated EBS Snapshots |
 
-### EBS Snapshots
+---
 
-An EBS snapshot is a point-in-time backup of an EBS volume. Snapshots can be used to restore volumes and support recovery from accidental changes or data loss.
+### EBS Snapshots & Security
 
-### EBS Security
+- **EBS Snapshots:** Incremental, point-in-time backups of EBS volumes stored durably in Amazon S3. Snapshots enable volume restoration, cross-AZ/cross-region migration, and disaster recovery from accidental changes or data corruption.
+- **EBS Encryption:** Protects data at rest on the volume, data in transit between EC2 and EBS, and all derived snapshots using **AWS Key Management Service (KMS)** keys without requiring application-level changes.
 
-EBS encryption helps protect stored data and snapshots. AWS KMS can be used for encryption key management.
+**Deployment Status:** Proposed storage architecture only; no billable EBS volume or EC2 instance was provisioned.
+
+---
 
 ### Key Takeaways
 
-- EBS provides persistent block storage for EC2.
-- EC2 is the virtual server; EBS is its storage device.
-- gp3 is a suitable general-purpose option for a small Nginx website.
-- EBS volumes are Availability Zone-specific.
-- Snapshots support backup and recovery.
-- EBS encryption helps protect data.
+- **EBS** provides persistent, Availability Zone-scoped block storage for EC2 instances.
+- **`gp3`** offers predictable baseline performance and cost efficiency for an Nginx web server root volume.
+- **EBS Snapshots** and **AWS KMS encryption** provide essential durability, recovery, and data-at-rest protection.
 
-**Deployment status:** Proposed configuration only. No billable EBS volume or EC2 instance was created.
+---
 
 ## 13. Amazon Simple Storage Service (S3)
 
 ### Objective
 
-Understand how Amazon S3 provides object storage independently of EC2 instances.
+Understand how Amazon S3 provides scalable object storage independently of EC2 compute resources.
 
-### What is S3?
+---
 
-Amazon Simple Storage Service (S3) is an object storage service used to store and retrieve files and other data.
+### What Is S3?
 
-### Buckets and Objects
+**Amazon Simple Storage Service (S3)** is a managed object storage service built to store and retrieve any amount of data from anywhere over HTTPS.
 
-- Bucket: Container for storing objects.
-- Object: File and its associated metadata.
+- **Bucket:** A globally uniquely named container within an AWS Region that holds objects and enforces access/lifecycle policies.
+- **Object:** The fundamental entity stored in S3, consisting of file data, a unique key (name/path), and system or custom metadata.
+
+---
 
 ### EBS vs. S3
 
-| EBS | S3 |
-|---|---|
-| Block storage | Object storage |
-| Used as storage volumes for EC2 | Used for files, backups, and objects |
-| AZ-specific volumes | Regional object storage service |
-| Supports block-level operations | Accessed through APIs and supported integrations |
+| Aspect | Amazon EBS | Amazon S3 |
+| :--- | :--- | :--- |
+| **Storage Model** | Block storage (mounted as a file system volume) | Object storage (flat namespace accessed via REST API/SDK/CLI) |
+| **Primary Use** | OS boot volumes, databases, and active application storage for EC2 | Backups, static assets, logs, archives, and data lakes |
+| **Scope & Availability** | Bound to a single Availability Zone (AZ) | Regional service replicated across multiple AZs |
+| **Coupling** | Must be attached to an EC2 instance to be read/written | Fully independent of EC2; accessible concurrently by multiple services |
+
+---
 
 ### S3 Storage Classes
 
 | Storage Class | Typical Purpose |
-|---|---|
-| S3 Standard | Frequently accessed data |
-| S3 Intelligent-Tiering | Changing or unpredictable access patterns |
-| S3 Standard-IA | Infrequently accessed data |
-| S3 One Zone-IA | Infrequently accessed data in one AZ |
-| S3 Glacier Instant Retrieval | Archival data requiring fast retrieval |
-| S3 Glacier Flexible Retrieval | Archival data with flexible retrieval |
-| S3 Glacier Deep Archive | Long-term archival |
+| :--- | :--- |
+| **S3 Standard** | Frequently accessed data requiring millisecond latency and high throughput |
+| **S3 Intelligent-Tiering** | Workloads with unknown, changing, or unpredictable access patterns |
+| **S3 Standard-IA** | Infrequently accessed data requiring rapid retrieval when needed |
+| **S3 One Zone-IA** | Recreable, infrequently accessed data stored in a single AZ at lower cost |
+| **S3 Glacier Instant Retrieval** | Long-lived archive data needing millisecond retrieval once per quarter |
+| **S3 Glacier Flexible Retrieval** | Archival backups with configurable retrieval times (minutes to hours) |
+| **S3 Glacier Deep Archive** | Long-term compliance and regulatory archives (retrieval within 12–48 hours) |
+
+---
 
 ### Proposed Private Backup Bucket
 
 | Setting | Proposed Value |
-|---|---|
-| Purpose | Nginx website backups |
-| Region | ap-southeast-1 |
-| Storage Class | S3 Standard |
-| Access | Private |
-| Block Public Access | Enabled |
-| Encryption | SSE-S3 |
-| Versioning | Enabled |
+| :--- | :--- |
+| **Purpose** | Nginx configuration and website backups |
+| **AWS Region** | `ap-southeast-1` (Singapore) |
+| **Storage Class** | S3 Standard |
+| **Access Level** | Private |
+| **Block Public Access** | Enabled (all 4 settings active) |
+| **Default Encryption** | `SSE-S3` (AES-256) |
+| **Versioning** | Enabled |
 
-### S3 Security
+---
 
-- IAM policies control permissions assigned to identities.
-- Bucket policies define resource-based access permissions.
-- Block Public Access helps prevent unintended public exposure.
-- Encryption protects stored objects.
-- Versioning retains multiple versions of objects.
+### S3 Security & Architecture Integration
 
-### Proposed Architecture
+- **IAM & Bucket Policies:** Govern identity-based and resource-based permissions using least-privilege principles.
+- **Block Public Access:** Account- and bucket-level safeguard preventing accidental public exposure via ACLs or bucket policies.
+- **Encryption & Versioning:** `SSE-S3` encrypts objects at rest, while bucket versioning preserves previous object states against accidental overwrites or deletions.
+- **EC2-to-S3 Integration:** Rather than storing static AWS access keys on the server, the Ubuntu EC2 instance assumes an **IAM Instance Profile (IAM Role)** with tightly scoped `s3:PutObject` permissions to upload backup archives to the designated bucket.
 
-An Ubuntu EC2 instance runs Nginx. EBS provides persistent block storage for the server, while a private S3 bucket stores website backup files.
+**Deployment Status:** Proposed storage architecture only; no S3 bucket or billable resources were created.
 
-The EC2 instance can use an IAM role with limited permissions to upload backup objects to the designated bucket.
+---
 
 ### Key Takeaways
 
-- S3 is object storage.
-- A bucket is a container for objects.
-- EBS and S3 serve different storage purposes.
-- S3 storage classes support different access patterns.
-- Private backup buckets should have Block Public Access enabled.
-- IAM and bucket policies control access.
-- Encryption and versioning provide additional protection.
+- **S3** provides decoupled, regionally durable object storage distinct from **EBS** block volumes.
+- Selecting the right **S3 Storage Class** balances retrieval speed against storage cost.
+- Private backup buckets should enforce **Block Public Access**, **encryption**, **versioning**, and **IAM role-based access**.
 
-**Deployment status:** Proposed configuration only. No S3 bucket or billable resources were created.
+---
+
+## 14. Integrated EC2 + EBS + S3 Web Server Design
+
+### Objective
+
+Design a cohesive, security-conscious AWS web server architecture combining Amazon EC2, EBS, and S3.
+
+---
+
+### Architecture Overview
+
+The proposed design deploys an **Ubuntu Server EC2 instance** running **Nginx** inside a public subnet to serve web traffic. **Amazon EBS** provides encrypted, persistent block storage for the OS and active web files, while **Amazon S3** acts as an independent, off-instance target for automated backups.
+
+```text
+[ Internet Users ]
+        │  HTTPS (TCP 443)
+        ▼
+[ Internet Gateway ]
+        │
+        ▼
+┌───────────────────────────────────────────────────────────┐
+│  VPC (10.20.0.0/16)                                       │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │  Public Subnet: Public Web-A                        │  │
+│  │  ┌───────────────────────────────────────────────┐  │  │
+│  │  │  Security Group (TCP 443 Public, TCP 22 Admin)│  │  │
+│  │  │  ┌─────────────────────────────────────────┐  │  │  │
+│  │  │  │  EC2 Instance (t3.micro / Ubuntu Nginx) │  │  │  │
+│  │  │  │  Private IP: 10.20.1.10                 │  │  │  │
+│  │  │  └──────┬──────────────────────────┬───────┘  │  │  │
+│  │  └─────────┼──────────────────────────┼──────────┘  │  │
+│  └────────────┼──────────────────────────┼─────────────┘  │
+└───────────────┼──────────────────────────┼────────────────┘
+                │                          │
+                ▼                          ▼ (IAM Role — No Hardcoded Keys)
+     [ EBS Volume (20 GiB gp3) ]   [ Private S3 Backup Bucket ]
+     (Encrypted + EBS Snapshots)   (ap-southeast-1, SSE-S3, Versioned)
